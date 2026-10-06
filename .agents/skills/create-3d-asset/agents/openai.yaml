@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create 3D Asset"
+  short_description: "Generate consistent references and textured 3D assets"
+  default_prompt: "Use $create-3d-asset to turn my description into a textured 3D asset for Unreal Engine."
