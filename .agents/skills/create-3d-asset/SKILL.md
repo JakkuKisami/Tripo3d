@@ -5,7 +5,7 @@ description: Create textured 3D assets from descriptions or existing references 
 
 # Create 3D Asset
 
-Read [Tripo API and commands](references/tripo-api.md) before executing scripts. Read [reference image method](references/reference-method.md) before generating or inspecting images. Use the existing isolated checkout; do not create a worktree unless requested.
+Read [Tripo API and commands](references/tripo-api.md) before executing scripts. Read [reference image method](references/reference-method.md) before generating or inspecting images. Use this skill directory in the current workspace.
 
 ## Prepare
 
@@ -28,7 +28,7 @@ Inspect every image with the available image-viewing tool. Compare silhouettes, 
 2. Submit `generation` using `--allow-charge` only when the user's asset request authorizes paid generation and applicable billing/approval requirements are satisfied. Do not add unnecessary confirmation, but never bypass a required approval. A setup-only request authorizes no paid task. Poll with `resume` (10–30 second intervals, default 30 minute timeout).
 3. Never automatically retry a task submission. Reuse recorded task IDs. An uncertain submission permanently blocks that stage until reconciled with provider support or `attach` using a verified existing ID. Do not delete the marker or create a fresh job to bypass it.
 4. Download the generation result and validate it. Prefer `pbr_model` when returned; do not select an untextured `base_model` as the textured deliverable. If it exceeds the triangle range, submit a supported `lowpoly` job with 12,500 face limit and baking; validate its UVs/materials after download. Keep the original files. Do not force another charged job when a timeout or lost response may hide an existing task.
-5. Use a `glb` conversion stage (API format `GLTF`) with explicit `texture_size=4096`, PNG textures, baking, and `pack_uv=false`. `texture_quality="detailed"` alone does not establish 4K. The API may return a GLB or a glTF archive; inspect the actual output and convert glTF locally with Blender if necessary. Request `fbx` conversion from the same successful source when available and authorized. Use `--parent lowpoly` after remeshing. Conversion stages may incur charges.
+5. Use a `glb` conversion stage (API format `GLTF`) with requested `texture_size=4096`, PNG textures, baking, and `pack_uv=false`. `texture_quality="detailed"` alone does not establish 4K. Conversion documents diffuse-map sizing only and its explicit 4096 acceptance is ambiguous; read the API reference and report this live-test limitation. Verify every PBR map separately. The API may return a GLB or a glTF archive; inspect the actual output and convert glTF locally with Blender if necessary. Request `fbx` conversion from the same successful source when available and authorized. Use `--parent lowpoly` after remeshing. Conversion stages may incur charges.
 
 ## Verify and deliver
 
@@ -36,4 +36,4 @@ Validate the selected GLB/glTF with `scripts/validate_asset.py`; extract ZIP arc
 
 Report actual rendered triangle count, texture dimensions, UV presence, PBR map availability, file hashes, and deviations. The validator exports textures and splits packed metallic/roughness/occlusion channels for Unreal use. Exit 2 means integrity passed but target requirements did not; never describe it as a full pass. Unsupported compressed geometry or sparse accessors require an independent validator, not guessed counts. Geometry integrity does not establish artistic fidelity, watertightness, rigging, animation, or collision readiness. Compare model preview/import against the references before declaring design fidelity.
 
-Package validated models, references, extracted textures, validation evidence, and a sanitized task-ID manifest with `scripts/package_asset.py`. Persist and link the ZIP and preferred GLB, plus FBX and textures when present. Provide task IDs. Use real persistent local file links in this workspace; use the storage provider's returned links after uploading elsewhere. Do not invent a Tripo dashboard URL or imply API jobs appear in the consumer website. State any unresolved target or live-test limitation clearly.
+Package validated models, references, extracted textures, validation evidence, and a sanitized task-ID manifest with `scripts/package_asset.py`. Persist and link the ZIP and preferred GLB, plus FBX and textures when present. Provide task IDs. Use the current storage workflow and persist user-facing copies in the thread output directory when provided; use the storage provider's returned links after uploading elsewhere. Do not invent a Tripo dashboard URL or imply API jobs appear in the consumer website. State any unresolved target or live-test limitation clearly.

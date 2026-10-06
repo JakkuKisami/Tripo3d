@@ -18,8 +18,8 @@ import urllib.request
 import uuid
 
 BASE = 'https://api.tripo3d.ai/v2/openapi'
-VIEWS = ('front', 'back', 'left', 'right')
-TERMINAL = {'success', 'failed', 'cancelled', 'banned', 'expired'}
+VIEWS = ('front', 'left', 'back', 'right')
+TERMINAL = {'success', 'failed', 'cancelled', 'banned', 'expired', 'unknown'}
 
 
 def atomic_json(path, data):
@@ -67,12 +67,13 @@ class Client:
             raise RuntimeError(f'Tripo HTTP {e.code}; response body omitted for credential safety') from None
         except (urllib.error.URLError, TimeoutError, OSError):
             raise RuntimeError('Tripo transport failed; no automatic submission retry') from None
-        if payload.get('code', 0) != 0:
+        if payload.get('code') != 0:
             raise RuntimeError('Tripo API rejected request; code ' + str(payload.get('code')))
         if not isinstance(payload.get('data'), dict): raise RuntimeError('Unexpected Tripo response')
         return payload['data']
 
     def upload(self, path):
+        if Path(path).stat().st_size > 20 * 1024 * 1024: raise ValueError('Reference exceeds Tripo 20 MB upload limit')
         boundary = 'TripoAsset' + uuid.uuid4().hex
         body = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="reference.jpg"\r\n'
                 'Content-Type: image/jpeg\r\n\r\n').encode() + Path(path).read_bytes() + f'\r\n--{boundary}--\r\n'.encode()
@@ -169,6 +170,7 @@ def build_payload(job, stage, parent=None):
     target = job['targets']['triangles']
     if stage == 'generation':
         refs = job['references']
+        if len(refs) < 2: raise RuntimeError('Multiview requires at least two reviewed images')
         if 'front' not in refs or not job.get('review'): raise RuntimeError('Reviewed front reference is required')
         for r in refs.values():
             if not r.get('file_token'): raise RuntimeError('Upload references before generation')
@@ -180,7 +182,7 @@ def build_payload(job, stage, parent=None):
     source = successful_parent(job, parent or 'generation')
     if stage == 'lowpoly':
         return {'type':'highpoly_to_lowpoly','original_model_task_id':source,
-            'model_version':'P-v2.0-20251226','face_limit':target,'quad':False,'bake':True}
+            'model_version':'P-v2.0-20251225','face_limit':target,'quad':False,'bake':True}
     if stage not in {'glb','fbx'}: raise ValueError('Unknown stage')
     return {'type':'convert_model','original_model_task_id':source,'format':'GLTF' if stage=='glb' else 'FBX',
         'texture_size':4096,'texture_format':'PNG','face_limit':target,'quad':False,'pack_uv':False,

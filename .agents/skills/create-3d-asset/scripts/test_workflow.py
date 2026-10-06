@@ -84,7 +84,19 @@ class WorkflowTests(unittest.TestCase):
     def test_missing_slot_keeps_placeholder(self):
         self.refs();del self.job['references']['back']
         files=workflow.build_payload(self.job,'generation')['files']
-        self.assertEqual(files[1],{});self.assertEqual(files[2]['file_token'],'test-upload-3')
+        self.assertEqual(files[2],{});self.assertEqual(files[1]['file_token'],'test-upload-2')
+    def test_official_cardinal_slot_order(self):
+        self.assertEqual(workflow.VIEWS, ('front','left','back','right'))
+        self.refs()
+        payload=workflow.build_payload(self.job,'generation')
+        for index, view in enumerate(('front','left','back','right')):
+            self.assertEqual(payload['files'][index]['file_token'],self.job['references'][view]['file_token'])
+    def test_one_view_rejected(self):
+        self.refs();self.job['references']={'front':self.job['references']['front']}
+        with self.assertRaises(RuntimeError):workflow.build_payload(self.job,'generation')
+    def test_remesh_version_matches_official_docs(self):
+        self.job['tasks']['generation']={'task_id':'test-task-001','status':'success'}
+        self.assertEqual(workflow.build_payload(self.job,'lowpoly')['model_version'],'P-v2.0-20251225')
     def test_changed_reference_blocks_submit(self):
         self.refs();Path(self.job['references']['front']['path']).write_bytes(b'changed')
         with self.assertRaises(RuntimeError):workflow.build_payload(self.job,'generation')
